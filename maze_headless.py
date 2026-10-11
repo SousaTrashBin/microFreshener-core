@@ -27,9 +27,10 @@ def analyze(data, detectors):
     if (
         set(data) != {"schema_version", "evidence_fingerprint", "model"}
         or type(data["schema_version"]) is not int
-        or data["schema_version"] != 1
+        or data["schema_version"] not in (1, 2)
     ):
         raise ValueError("Unsupported evidence envelope")
+    version = data["schema_version"]
     identity = data["evidence_fingerprint"]
     if (
         not isinstance(identity, str)
@@ -71,18 +72,22 @@ def analyze(data, detectors):
             "timeout",
             "circuit_breaker",
             "dynamic_discovery",
+            *({"evidence_id"} if version == 2 else set()),
         }:
             raise ValueError("Invalid interaction")
         pair = link["source"], link["target"]
+        identifier = link.get("evidence_id") if version == 2 else pair
+        if version == 2 and (not isinstance(identifier, str) or not identifier or len(identifier) > 128):
+            raise ValueError("Invalid interaction evidence ID")
         if (
             names.get(pair[0]) != "service"
             or pair[1] not in names
             or pair[0] == pair[1]
-            or pair in seen
+            or identifier in seen
             or link["type"] != "interaction"
         ):
             raise ValueError("Invalid interaction ownership")
-        seen.add(pair)
+        seen.add(identifier)
     if (
         not detectors
         or len(set(detectors)) != len(detectors)
@@ -108,10 +113,11 @@ def analyze(data, detectors):
                         "source": link["source"],
                         "target": link["target"],
                         "unknown": missing,
+                        **({"evidence_id": link["evidence_id"]} if version == 2 else {}),
                     }
                 )
     return {
-        "schema_version": 1,
+        "schema_version": version,
         "evidence_fingerprint": identity,
         "detectors": detectors,
         "results": builder.build().run(),

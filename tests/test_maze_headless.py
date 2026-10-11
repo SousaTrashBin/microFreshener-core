@@ -69,6 +69,34 @@ class MazeHeadlessTests(unittest.TestCase):
         self.assertEqual(len(smell["refactorings"]), 3)
         self.assertEqual(result["coverage"], [])
 
+    def test_operation_ids_preserve_parallel_protected_unknown_and_unprotected_calls(self):
+        model = graph()
+        model["links"] = [
+            {"source": "source", "target": "target", "type": "interaction",
+             "evidence_id": "protected", "timeout": True, "circuit_breaker": None},
+            {"source": "source", "target": "target", "type": "interaction",
+             "evidence_id": "unprotected", "timeout": False, "circuit_breaker": False},
+            {"source": "source", "target": "target", "type": "interaction",
+             "evidence_id": "unknown", "timeout": None, "circuit_breaker": False},
+        ]
+        data = envelope(model)
+        data["schema_version"] = 2
+        result = analyze(data, ["wobbly"])
+        self.assertEqual(result["schema_version"], 2)
+        causes = result["results"]["nodes"][0]["smells"][0]["links"]
+        self.assertEqual([l["evidence_id"] for l in causes], ["unprotected"])
+        self.assertEqual([c["evidence_id"] for c in result["coverage"]], ["unknown"])
+        for mutation in ("duplicate", "missing"):
+            altered = copy.deepcopy(model)
+            if mutation == "duplicate":
+                altered["links"][1]["evidence_id"] = "protected"
+            else:
+                del altered["links"][1]["evidence_id"]
+            forged = envelope(altered)
+            forged["schema_version"] = 2
+            with self.assertRaisesRegex(ValueError, "interaction"):
+                analyze(forged, ["wobbly"])
+
     def test_boundary_rejects_forged_identity_invalid_properties_and_detector(self):
         data = envelope(graph())
         altered = copy.deepcopy(data)

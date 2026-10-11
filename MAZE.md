@@ -11,8 +11,11 @@ booleans. Legacy imports retain their existing default-false behavior. The upstr
 detector predicates compare against false, so unknowns cannot establish absence.
 The headless result includes per-link coverage for selected rules with unknowns.
 
-The MAZE pilot selects only shared persistence. Resilience, discovery, gateway,
-team and co-hosting findings require evidence MAZE does not currently establish.
+The MAZE pilot selects shared persistence and bounded direct-client wobbly
+interactions. Protocol 2 requires stable opaque `evidence_id` strings on links;
+parallel operations retain separate identities through import and result causes.
+Protocol 1 remains accepted for existing callers. Discovery, gateway, team and
+co-hosting findings require evidence MAZE does not currently establish.
 Refactoring descriptions are suggestions, never applied to application sources.
 
 ```sh
