@@ -24,6 +24,9 @@ logger = MyLogger().get_logger()
 
 class JSONImporter(Importer):
 
+    def __init__(self, preserve_unknown=False):
+        self.preserve_unknown = preserve_unknown
+
     def Import(self, path_to_json)->MicroToscaModel:
         logger.info("Loading JSON file: {}".format(path_to_json))
         if os.path.exists(path_to_json):
@@ -148,6 +151,15 @@ class JSONImporter(Importer):
     #     return (type_requirement, source_node, target_node)
 
     def get_properties_of_interaction_from_json(self, link_json):
+        if self.preserve_unknown:
+            values = tuple(link_json.get(key) for key in (
+                MICROTOSCA_RELATIONSHIPS_INTERACT_WITH_TIMEOUT_PROPERTY,
+                MICROTOSCA_RELATIONSHIPS_INTERACT_WITH_CIRCUIT_BREAKER_PROPERTY,
+                MICROTOSCA_RELATIONSHIPS_INTERACT_WITH_DYNAMIC_DISCOVEY_PROPERTY,
+            ))
+            if any(value is not None and type(value) is not bool for value in values):
+                raise ImporterError("Interaction evidence must be boolean or unknown")
+            return values
         is_timeout = False
         is_circuit_breaker = False
         is_dynamic_discovery = False
