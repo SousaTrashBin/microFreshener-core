@@ -22,6 +22,9 @@ class MyLogger(object, metaclass=SingletonType):
 
     def __init__(self):
         self._logger = logging.getLogger("microtosca")
+        if os.environ.get("MAZE_MICROFRESHENER_HEADLESS") == "1":
+            self._logger.addHandler(logging.NullHandler())
+            return
         # self._logger.setLevel(logging.DEBUG)
         self._logger.setLevel(logging.INFO)
 
@@ -32,7 +35,7 @@ class MyLogger(object, metaclass=SingletonType):
 
         if not os.path.isdir(dirname):
             os.mkdir(dirname)
-            os.chmod(dirname, "0777")
+            os.chmod(dirname, 0o777)
         fileHandler = logging.FileHandler(dirname + "/log_" + now.strftime("%Y-%m-%d")+".log")
 
         streamHandler = logging.StreamHandler()

@@ -103,7 +103,10 @@ class InteractsWith(Relationship):
 
     def to_dict(self):
         # return {'source': str(self.source), 'target': str(self.target)}
-        return {'source': self.source.name, 'target': self.target.name, "type": "interaction"}
+        result = {'source': self.source.name, 'target': self.target.name, "type": "interaction"}
+        if hasattr(self, "evidence_id"):
+            result["evidence_id"] = self.evidence_id
+        return result
 
 
 class DeploymentTimeInteraction(InteractsWith):
